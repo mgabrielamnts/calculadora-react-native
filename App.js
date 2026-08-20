@@ -1,24 +1,14 @@
 import { StatusBar } from "expo-status-bar";
-import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity
-} from "react-native";
+import {StyleSheet, Text, View, TouchableOpacity} from "react-native";
 
 function App() {
   return (
     <View style={styles.container}>
 
       <StatusBar style="light" />
+      <Text style={styles.titulo}>Calculadora da Bibi ♡</Text>
 
-      <Text style={styles.titulo}>
-        Calculadora da Bibi ♡
-      </Text>
-
-      <Text style={styles.painel}>
-        0
-      </Text>
+      <Text style={styles.painel}>0 </Text>
 
 
       <View style={styles.colunas}>
@@ -46,6 +36,8 @@ function App() {
       </View>
 
 
+
+
       <View style={styles.colunas}>
 
         <TouchableOpacity style={styles.botaoEspecial}>
@@ -65,6 +57,8 @@ function App() {
         </TouchableOpacity>
 
       </View>
+
+
 
 
       <View style={styles.colunas}>
@@ -88,6 +82,8 @@ function App() {
       </View>
 
 
+
+
       <View style={styles.colunas}>
 
         <TouchableOpacity style={styles.botaoNumero}>
@@ -109,6 +105,8 @@ function App() {
       </View>
 
 
+
+
       <View style={styles.colunas}>
 
         <TouchableOpacity style={styles.botaoNumero}>
@@ -128,6 +126,8 @@ function App() {
         </TouchableOpacity>
 
       </View>
+
+
 
 
       <View style={styles.colunas}>
@@ -173,6 +173,7 @@ const styles = StyleSheet.create({
   },
 
 
+
   // Titulo
   titulo: {
     textAlign: "center",
@@ -193,9 +194,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#FFFFFF",
     backgroundColor: "#29222E",
-
     borderRadius: 16,
-
     padding: 18,
     marginTop: 20,
     marginBottom: 8,
@@ -213,14 +212,10 @@ const styles = StyleSheet.create({
   // Primeira linha
   botao: {
     backgroundColor: "#E8DCEE",
-
     borderRadius: 12,
-
     height: 45,
     width: "17%",
-
     marginTop: 12,
-
     alignItems: "center",
     justifyContent: "center",
   },
@@ -235,17 +230,12 @@ const styles = StyleSheet.create({
   // Segunda linha
   botaoEspecial: {
     backgroundColor: "#DCC8E5",
-
     borderRadius: 18,
-
     height: 62,
     width: "21%",
-
     marginTop: 12,
-
     alignItems: "center",
     justifyContent: "center",
-
     elevation: 2,
   },
 
@@ -259,19 +249,13 @@ const styles = StyleSheet.create({
   // Todos os numeros
   botaoNumero: {
     backgroundColor: "#FFFFFF",
-
     borderRadius: 18,
-
     height: 62,
     width: "21%",
-
     marginTop: 12,
-
     alignItems: "center",
     justifyContent: "center",
-
     elevation: 3,
-
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 4,
@@ -288,17 +272,12 @@ const styles = StyleSheet.create({
   // botoes operacao
   botaoOperacao: {
     backgroundColor: "#C86B98",
-
     borderRadius: 18,
-
     height: 62,
     width: "21%",
-
     marginTop: 12,
-
     alignItems: "center",
     justifyContent: "center",
-
     elevation: 3,
   },
 
@@ -312,17 +291,12 @@ const styles = StyleSheet.create({
   // botao de igual
   botaoIgual: {
     backgroundColor: "#8E5A9F",
-
     borderRadius: 18,
-
     height: 62,
     width: "21%",
-
     marginTop: 12,
-
     alignItems: "center",
     justifyContent: "center",
-
     elevation: 3,
   },
 
