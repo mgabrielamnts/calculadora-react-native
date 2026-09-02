@@ -20,9 +20,7 @@ A calculadora possui uma interface personalizada com:
 * Funções auxiliares
 * Layout desenvolvido com `StyleSheet`
 
-## 📱 Interface
-
-### Versão 01
+### 📱 Versão 01
 
 <p align="center">
   <img src="assets/calculadora-v1.png" width="300">
