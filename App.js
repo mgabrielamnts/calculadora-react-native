@@ -10,13 +10,21 @@ function App() {
   const [valorGuardado, setValorGuardado] = useState(null);
   const [operacao, setOperacao] = useState(null);
   const [expressao, setExpressao] = useState("");
+  const [memoria, setMemoria] = useState(0);
+  const [novoNumero, setNovoNumero] = useState(false);
 
 
   //Limitando número de caracteres no visor para 9 caracteres.
   const adicionarNumero = (numero) => {
+
     if (valor.length <10){
-      setValor(valor === "0" ? numero : valor + numero);
+
+      setValor(novoNumero ? numero : valor === "0" ? numero : valor + numero);
+
       setExpressao(expressao + numero);
+
+      setNovoNumero(false);
+
     }
   };
 
@@ -42,31 +50,62 @@ function App() {
   const limparTotal = () => {
     setValor("0");
     setExpressao("");
+    setMemoria(0);
   };
 
   //Botão troca sinal - +/-
   const trocarSinal = () => {
     if (valor !== "0"){
       if(valor.startsWith("-")){
-        setValor(valor.slice(1));}
+        setValor(valor.slice(1));
+        setExpressao(valor.slice(1));}
       else {
         setValor("-" + valor);
+        setExpressao("-" + valor)
       }
       }
     };
 
   //Botão de Porcentagem
   const calcularPorcentagem = () => {
-    setValor (String(Number(valor/100)))
+    const resultado = String(Number(valor) / 100);
+    setValor(resultado);
+    setExpressao(resultado);
   }
+
+    const calcularRaiz = () => {
+    const resultado = Math.sqrt((Number(valor))).toFixed(9);
+    setValor(String(resultado));
+    setExpressao(String(resultado));
+  }
+
+
+  const adicionarMemoria = () => {
+    setMemoria (memoria + Number(valor));
+    setNovoNumero(true);
+    
+  };
+
+    const subtrairMemoria = () => {
+    setMemoria (memoria - Number(valor));
+    setNovoNumero(true);
+    
+  };
+
+  const recuperarMemoria = () => {
+    setValor(String(memoria));
+    setExpressao(String(memoria));
+  };
 
   //Expressão do cálculo aparece no visor
   const selecionarOperacao = (tipoOperacao) => {
     setValorGuardado(valor);
     setOperacao(tipoOperacao);
-    setExpressao(expressao + tipoOperacao)
+    setExpressao(expressao + tipoOperacao);
     setValor("0");
+    setNovoNumero(true);
   };
+
 
   //Calculando resultados
   const calcularResultado = () => {
@@ -75,6 +114,30 @@ function App() {
 
     if(operacao === "+"){
       const resultado = numero1 + numero2;
+      setValor(String(resultado));
+      setExpressao(String(resultado));
+    };
+
+    if (operacao === "-"){
+      const resultado = numero1 - numero2;
+      setValor(String(resultado));
+      setExpressao(String(resultado));
+    };
+
+    if (operacao === "*"){
+      const resultado = numero1 * numero2;
+      setValor(String(resultado));
+      setExpressao(String(resultado));
+    };
+
+    if (operacao === "/"){
+      const resultado = numero1 / numero2;
+        if (numero2 === 0){
+          setValor("Erro");
+          setExpressao("Erro");
+          return;
+        }
+    
       setValor(String(resultado));
       setExpressao(String(resultado));
     };
@@ -93,19 +156,23 @@ function App() {
 
       <View style={styles.colunas}>
 
-        <TouchableOpacity style={styles.botao}>
+        <TouchableOpacity style={styles.botao}
+        onPress={recuperarMemoria}>
           <Text style={styles.textoBotao}>MRC</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botao}>
+        <TouchableOpacity style={styles.botao}
+        onPress={subtrairMemoria}>
           <Text style={styles.textoBotao}>M-</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botao}>
+        <TouchableOpacity style={styles.botao}
+        onPress={adicionarMemoria}>
           <Text style={styles.textoBotao}>M+</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botao}>
+        <TouchableOpacity style={styles.botao}
+        onPress={calcularRaiz}>
           <Text style={styles.textoBotao}>RAIZ</Text>
         </TouchableOpacity>
 
@@ -165,7 +232,8 @@ function App() {
           <Text style={styles.textoNumeros}>9</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botaoOperacao}>
+        <TouchableOpacity style={styles.botaoOperacao}
+        onPress={() => selecionarOperacao("/")}>
           <Text style={styles.textoOperacao}>÷</Text>
         </TouchableOpacity>
 
@@ -191,7 +259,8 @@ function App() {
           <Text style={styles.textoNumeros}>6</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botaoOperacao}>
+        <TouchableOpacity style={styles.botaoOperacao}
+        onPress={() => selecionarOperacao("*")}>
           <Text style={styles.textoOperacao}>×</Text>
         </TouchableOpacity>
 
@@ -217,7 +286,8 @@ function App() {
           <Text style={styles.textoNumeros}>3</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botaoOperacao}>
+        <TouchableOpacity style={styles.botaoOperacao}
+        onPress={() => selecionarOperacao("-")}>
           <Text style={styles.textoOperacao}>−</Text>
         </TouchableOpacity>
 
