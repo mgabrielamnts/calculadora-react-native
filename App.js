@@ -1,178 +1,661 @@
 import { StatusBar } from "expo-status-bar";
-import {StyleSheet, Text, View, TouchableOpacity} from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
 import React, { useState } from "react";
 
-
-
 function App() {
-  //variáveis
+
+  // =========================
+  // ESTADOS
+  // =========================
+
   const [valor, setValor] = useState("0");
-  const [valorGuardado, setValorGuardado] = useState(null);
-  const [operacao, setOperacao] = useState(null);
   const [expressao, setExpressao] = useState("");
   const [memoria, setMemoria] = useState(0);
   const [novoNumero, setNovoNumero] = useState(false);
+  const [resultadoCalculado, setResultadoCalculado] = useState(false);
 
 
-  //Limitando número de caracteres no visor para 9 caracteres.
-  const adicionarNumero = (numero) => {
+  // =========================
+  // FUNÇÕES AUXILIARES
+  // =========================
 
-    if (valor.length <10){
-
-      setValor(novoNumero ? numero : valor === "0" ? numero : valor + numero);
-
-      setExpressao(expressao + numero);
-
-      setNovoNumero(false);
-
-    }
+  // Identifica os operadores matemáticos
+  const ehOperador = (caractere) => {
+    return ["+", "-", "*", "/"].includes(caractere);
   };
 
-  //Adionando ponto "." nos números
-  const adicionaPonto = () => {
-    if (!valor.includes(".") && valor.length < 10) {
-      setValor(valor + ".")
-    };
-  }
 
-  //Botão de limpeza um a um - DEL
-  const apagarValoresDel = () => {
-    if (valor.length === 1) {
-      setValor("0");
-      setExpressao("");}
-    else{
-      setValor(valor.slice(0,-1));
-      setExpressao(expressao.slice(0,-1));
+  // Formata os resultados numéricos
+  const formatarResultado = (numero) => {
+
+    if (!Number.isFinite(numero)) {
+      return "Erro";
     }
-    };
 
-  // Botão limpeza total - AC
+    return String(Number(numero.toPrecision(10)));
+  };
+
+
+  // Exibe números negativos entre parênteses
+  const mostrarNumero = (numero) => {
+
+    if (numero.startsWith("-")) {
+      return `(${numero})`;
+    }
+
+    return numero;
+  };
+
+
+  // Localiza o último número da expressão
+  const obterUltimoNumero = (texto) => {
+
+    const resultado = texto.match(
+      /(\(-\d+(?:\.\d*)?\)|\d+(?:\.\d*)?)$/
+    );
+
+    if (!resultado) {
+      return null;
+    }
+
+    const numeroExibido = resultado[0];
+
+    return {
+      texto: numeroExibido,
+      numero: numeroExibido.replace(/[()]/g, ""),
+      inicio: texto.length - numeroExibido.length,
+    };
+  };
+
+
+  // Substitui apenas o último número da expressão
+  const substituirUltimoNumero = (novoNumero) => {
+
+    const ultimo = obterUltimoNumero(expressao);
+
+    if (!ultimo) {
+      setExpressao(mostrarNumero(novoNumero));
+      return;
+    }
+
+    const parteAnterior = expressao.slice(0, ultimo.inicio);
+
+    setExpressao(
+      parteAnterior + mostrarNumero(novoNumero)
+    );
+  };
+
+
+  // =========================
+  // ADICIONAR NÚMEROS
+  // =========================
+
+  const adicionarNumero = (numero) => {
+
+    // Se acabou de calcular, inicia outra expressão
+    if (resultadoCalculado || valor === "Erro") {
+
+      setValor(numero);
+      setExpressao(numero);
+      setNovoNumero(false);
+      setResultadoCalculado(false);
+
+      return;
+    }
+
+    // Se acabou de selecionar uma operação
+    if (novoNumero) {
+
+      setValor(numero);
+      setExpressao(expressao + numero);
+      setNovoNumero(false);
+
+      return;
+    }
+
+    // Adiciona o número durante a digitação
+    const novoValor =
+      valor === "0" ? numero : valor + numero;
+
+    // Limite de 10 caracteres por número
+    if (novoValor.length > 10) {
+      return;
+    }
+
+    setValor(novoValor);
+
+    substituirUltimoNumero(novoValor);
+  };
+
+
+  // =========================
+  // ADICIONAR PONTO DECIMAL
+  // =========================
+
+  const adicionaPonto = () => {
+
+    // Após pressionar =
+    if (resultadoCalculado || valor === "Erro") {
+
+      setValor("0.");
+      setExpressao("0.");
+      setNovoNumero(false);
+      setResultadoCalculado(false);
+
+      return;
+    }
+
+    // Após selecionar uma operação
+    if (novoNumero) {
+
+      setValor("0.");
+      setExpressao(expressao + "0.");
+      setNovoNumero(false);
+
+      return;
+    }
+
+    // Impede dois pontos no mesmo número
+    if (
+      valor.includes(".") ||
+      valor.length >= 10
+    ) {
+      return;
+    }
+
+    const novoValor = valor + ".";
+
+    setValor(novoValor);
+
+    substituirUltimoNumero(novoValor);
+  };
+
+
+  // =========================
+  // BOTÃO DEL
+  // =========================
+
+  const apagarValoresDel = () => {
+
+    // Se houver erro, limpa o visor
+    if (valor === "Erro") {
+
+      setValor("0");
+      setExpressao("");
+      setNovoNumero(false);
+      setResultadoCalculado(false);
+
+      return;
+    }
+
+    // Permite editar um resultado
+    if (resultadoCalculado) {
+      setResultadoCalculado(false);
+    }
+
+    // Se o último caractere for uma operação
+    if (novoNumero) {
+
+      const novaExpressao = expressao.slice(0, -1);
+
+      setExpressao(novaExpressao);
+
+      const ultimo = obterUltimoNumero(novaExpressao);
+
+      setValor(ultimo ? ultimo.numero : "0");
+      setNovoNumero(false);
+
+      return;
+    }
+
+    const ultimo = obterUltimoNumero(expressao);
+
+    if (!ultimo) {
+
+      setValor("0");
+      setExpressao("");
+
+      return;
+    }
+
+    // Apaga o último dígito
+    const numeroAtual = ultimo.numero;
+
+    let novoValor = numeroAtual.slice(0, -1);
+
+    if (
+      novoValor === "" ||
+      novoValor === "-"
+    ) {
+      novoValor = "0";
+    }
+
+    const parteAnterior = expressao.slice(0, ultimo.inicio);
+
+    // Se apagou o último dígito após uma operação
+    if (
+      novoValor === "0" &&
+      parteAnterior.length > 0 &&
+      ehOperador(parteAnterior.slice(-1))
+    ) {
+
+      setExpressao(parteAnterior);
+      setValor("0");
+      setNovoNumero(true);
+
+      return;
+    }
+
+    setValor(novoValor);
+
+    setExpressao(
+      parteAnterior + mostrarNumero(novoValor)
+    );
+  };
+
+
+  // =========================
+  // BOTÃO AC
+  // =========================
+
   const limparTotal = () => {
+
     setValor("0");
     setExpressao("");
     setMemoria(0);
+    setNovoNumero(false);
+    setResultadoCalculado(false);
   };
 
-  //Botão troca sinal - +/-
+
+  // =========================
+  // TROCAR SINAL +/-
+  // =========================
+
   const trocarSinal = () => {
-    if (valor !== "0"){
-      if(valor.startsWith("-")){
-        setValor(valor.slice(1));
-        setExpressao(valor.slice(1));}
-      else {
-        setValor("-" + valor);
-        setExpressao("-" + valor)
-      }
-      }
-    };
 
-  //Botão de Porcentagem
+    if (valor === "Erro") {
+      return;
+    }
+
+    // Se há uma operação aguardando número
+    if (novoNumero) {
+      return;
+    }
+
+    if (Number(valor) === 0) {
+      return;
+    }
+
+    const novoValor = valor.startsWith("-")
+      ? valor.slice(1)
+      : "-" + valor;
+
+    setValor(novoValor);
+
+    substituirUltimoNumero(novoValor);
+
+    setResultadoCalculado(false);
+  };
+
+
+  // =========================
+  // PORCENTAGEM
+  // =========================
+
   const calcularPorcentagem = () => {
-    const resultado = String(Number(valor) / 100);
+
+    if (valor === "Erro" || novoNumero) {
+      return;
+    }
+
+    const resultado = formatarResultado(
+      Number(valor) / 100
+    );
+
     setValor(resultado);
-    setExpressao(resultado);
-  }
 
-    const calcularRaiz = () => {
-    const resultado = Math.sqrt((Number(valor))).toFixed(9);
-    setValor(String(resultado));
-    setExpressao(String(resultado));
-  }
+    substituirUltimoNumero(resultado);
+
+    setResultadoCalculado(false);
+  };
 
 
+  // =========================
+  // RAIZ QUADRADA
+  // =========================
+
+  const calcularRaiz = () => {
+
+    if (valor === "Erro" || novoNumero) {
+      return;
+    }
+
+    const numero = Number(valor);
+
+    // Não permite raiz quadrada de número negativo
+    if (numero < 0) {
+
+      setValor("Erro");
+      setExpressao("Erro");
+      setResultadoCalculado(true);
+
+      return;
+    }
+
+    const resultado = formatarResultado(
+      Math.sqrt(numero)
+    );
+
+    setValor(resultado);
+
+    substituirUltimoNumero(resultado);
+
+    setResultadoCalculado(false);
+  };
+
+
+  // =========================
+  // MEMÓRIA
+  // =========================
+
+  // M+
   const adicionarMemoria = () => {
-    setMemoria (memoria + Number(valor));
-    setNovoNumero(true);
-    
+
+    if (valor === "Erro") {
+      return;
+    }
+
+    setMemoria(
+      (anterior) => anterior + Number(valor)
+    );
   };
 
-    const subtrairMemoria = () => {
-    setMemoria (memoria - Number(valor));
-    setNovoNumero(true);
-    
+
+  // M-
+  const subtrairMemoria = () => {
+
+    if (valor === "Erro") {
+      return;
+    }
+
+    setMemoria(
+      (anterior) => anterior - Number(valor)
+    );
   };
 
+
+  // MRC
   const recuperarMemoria = () => {
-    setValor(String(memoria));
-    setExpressao(String(memoria));
+
+    const numero = formatarResultado(memoria);
+
+    if (resultadoCalculado || valor === "Erro") {
+
+      setValor(numero);
+      setExpressao(mostrarNumero(numero));
+      setResultadoCalculado(false);
+      setNovoNumero(false);
+
+      return;
+    }
+
+    if (novoNumero) {
+
+      setValor(numero);
+
+      setExpressao(
+        expressao + mostrarNumero(numero)
+      );
+
+      setNovoNumero(false);
+
+      return;
+    }
+
+    setValor(numero);
+
+    substituirUltimoNumero(numero);
   };
 
-  //Expressão do cálculo aparece no visor
+
+  // =========================
+  // SELECIONAR OPERAÇÃO
+  // =========================
+
   const selecionarOperacao = (tipoOperacao) => {
-    setValorGuardado(valor);
-    setOperacao(tipoOperacao);
-    setExpressao(expressao + tipoOperacao);
-    setValor("0");
+
+    if (valor === "Erro") {
+      return;
+    }
+
+    // Após pressionar =, continua usando o resultado
+    if (resultadoCalculado) {
+
+      setExpressao(
+        mostrarNumero(valor) + tipoOperacao
+      );
+
+      setNovoNumero(true);
+      setResultadoCalculado(false);
+
+      return;
+    }
+
+    // Se já existe uma operação no final,
+    // substitui pela nova operação
+    if (novoNumero) {
+
+      setExpressao(
+        expressao.slice(0, -1) + tipoOperacao
+      );
+
+      return;
+    }
+
+    // Apenas adiciona a operação à expressão
+    // NÃO realiza nenhum cálculo
+    setExpressao(
+      (expressao || valor) + tipoOperacao
+    );
+
     setNovoNumero(true);
   };
 
 
-  //Calculando resultados
-  const calcularResultado = () => {
-    const numero1 = Number(valorGuardado);
-    const numero2 = Number(valor);
+  // =========================
+  // INTERPRETAR EXPRESSÃO
+  // =========================
 
-    if(operacao === "+"){
-      const resultado = numero1 + numero2;
-      setValor(String(resultado));
-      setExpressao(String(resultado));
-    };
+  const interpretarExpressao = (texto) => {
 
-    if (operacao === "-"){
-      const resultado = numero1 - numero2;
-      setValor(String(resultado));
-      setExpressao(String(resultado));
-    };
+    // Remove espaços
+    const entrada = texto.replace(/\s/g, "");
 
-    if (operacao === "*"){
-      const resultado = numero1 * numero2;
-      setValor(String(resultado));
-      setExpressao(String(resultado));
-    };
+    // Identifica números e operadores
+    const partes = entrada.match(
+      /\(-\d+(?:\.\d*)?\)|\d+(?:\.\d*)?|[+\-*/]/g
+    );
 
-    if (operacao === "/"){
-      const resultado = numero1 / numero2;
-        if (numero2 === 0){
-          setValor("Erro");
-          setExpressao("Erro");
-          return;
+    if (!partes || partes.join("") !== entrada) {
+      return "Erro";
+    }
+
+    const numeros = [];
+    const operadores = [];
+
+    // Separa números e operações
+    for (let i = 0; i < partes.length; i++) {
+
+      const parte = partes[i];
+
+      if (ehOperador(parte)) {
+
+        operadores.push(parte);
+
+      } else {
+
+        const numero = Number(
+          parte.replace(/[()]/g, "")
+        );
+
+        if (!Number.isFinite(numero)) {
+          return "Erro";
         }
-    
-      setValor(String(resultado));
-      setExpressao(String(resultado));
-    };
-  }
+
+        numeros.push(numero);
+      }
+    }
+
+    // Verifica se a expressão está completa
+    if (numeros.length !== operadores.length + 1) {
+      return "Erro";
+    }
+
+    // =========================
+    // PRIMEIRO: MULTIPLICAÇÃO E DIVISÃO
+    // =========================
+
+    let i = 0;
+
+    while (i < operadores.length) {
+
+      const operador = operadores[i];
+
+      if (operador === "*" || operador === "/") {
+
+        const numero1 = numeros[i];
+        const numero2 = numeros[i + 1];
+
+        if (operador === "/" && numero2 === 0) {
+          return "Erro";
+        }
+
+        const resultado =
+          operador === "*"
+            ? numero1 * numero2
+            : numero1 / numero2;
+
+        // Substitui os dois números pelo resultado
+        numeros.splice(i, 2, resultado);
+
+        // Remove a operação utilizada
+        operadores.splice(i, 1);
+
+      } else {
+
+        i++;
+      }
+    }
+
+    // =========================
+    // DEPOIS: SOMA E SUBTRAÇÃO
+    // =========================
+
+    while (operadores.length > 0) {
+
+      const operador = operadores.shift();
+
+      const numero1 = numeros.shift();
+      const numero2 = numeros.shift();
+
+      const resultado =
+        operador === "+"
+          ? numero1 + numero2
+          : numero1 - numero2;
+
+      numeros.unshift(resultado);
+    }
+
+    return formatarResultado(numeros[0]);
+  };
 
 
+  // =========================
+  // BOTÃO =
+  // =========================
+
+  const calcularResultado = () => {
+
+    // Impede calcular uma expressão incompleta
+    if (
+      novoNumero ||
+      resultadoCalculado ||
+      expressao === "" ||
+      expressao === "Erro"
+    ) {
+      return;
+    }
+
+    // Se não houver operação, mantém o número
+    const resultado = interpretarExpressao(expressao);
+
+    setValor(resultado);
+
+    setExpressao(
+      resultado === "Erro"
+        ? "Erro"
+        : mostrarNumero(resultado)
+    );
+
+    setNovoNumero(false);
+    setResultadoCalculado(true);
+  };
+
+
+  // =========================
+  // INTERFACE
+  // =========================
 
   return (
+
     <View style={styles.container}>
 
       <StatusBar style="light" />
-      <Text style={styles.titulo}>Calculadora da Bibi ♡</Text>
 
-      <Text style={styles.painel}>{expressao || valor}</Text>
+      <Text style={styles.titulo}>
+        Calculadora da Bibi ♡
+      </Text>
 
+      {/* VISOR */}
+
+      <Text style={styles.painel} numberOfLines={1} adjustsFontSizeToFit>
+        {(expressao || valor)
+          .replace(/\./g, ",")
+          .replace(/\*/g, "×")
+          .replace(/\//g, "÷")}
+      </Text>
+
+
+      {/* PRIMEIRA LINHA */}
 
       <View style={styles.colunas}>
 
-        <TouchableOpacity style={styles.botao}
-        onPress={recuperarMemoria}>
+        <TouchableOpacity
+          style={styles.botao}
+          onPress={recuperarMemoria}
+        >
           <Text style={styles.textoBotao}>MRC</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botao}
-        onPress={subtrairMemoria}>
+        <TouchableOpacity
+          style={styles.botao}
+          onPress={subtrairMemoria}
+        >
           <Text style={styles.textoBotao}>M-</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botao}
-        onPress={adicionarMemoria}>
+        <TouchableOpacity
+          style={styles.botao}
+          onPress={adicionarMemoria}
+        >
           <Text style={styles.textoBotao}>M+</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botao}
-        onPress={calcularRaiz}>
+        <TouchableOpacity
+          style={styles.botao}
+          onPress={calcularRaiz}
+        >
           <Text style={styles.textoBotao}>RAIZ</Text>
         </TouchableOpacity>
 
@@ -183,147 +666,190 @@ function App() {
       </View>
 
 
-
+      {/* SEGUNDA LINHA */}
 
       <View style={styles.colunas}>
 
-        <TouchableOpacity style={styles.botaoEspecial}
-        onPress={limparTotal}>
+        <TouchableOpacity
+          style={styles.botaoEspecial}
+          onPress={limparTotal}
+        >
           <Text style={styles.textoEspecial}>AC</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botaoEspecial}
-        onPress={apagarValoresDel}>
+        <TouchableOpacity
+          style={styles.botaoEspecial}
+          onPress={apagarValoresDel}
+        >
           <Text style={styles.textoEspecial}>DEL</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botaoEspecial}
-        onPress={trocarSinal}>
+        <TouchableOpacity
+          style={styles.botaoEspecial}
+          onPress={trocarSinal}
+        >
           <Text style={styles.textoEspecial}>+/-</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botaoEspecial}
-        onPress={calcularPorcentagem}>
+        <TouchableOpacity
+          style={styles.botaoEspecial}
+          onPress={calcularPorcentagem}
+        >
           <Text style={styles.textoEspecial}>%</Text>
         </TouchableOpacity>
 
       </View>
 
 
-
+      {/* TERCEIRA LINHA */}
 
       <View style={styles.colunas}>
 
-        <TouchableOpacity style={styles.botaoNumero}
-         onPress={() => adicionarNumero("7")}>
-         <Text style={styles.textoNumeros}>7</Text>
+        <TouchableOpacity
+          style={styles.botaoNumero}
+          onPress={() => adicionarNumero("7")}
+        >
+          <Text style={styles.textoNumeros}>7</Text>
         </TouchableOpacity>
 
-
-
-
-        <TouchableOpacity style={styles.botaoNumero}
-        onPress={() => adicionarNumero("8")}>
+        <TouchableOpacity
+          style={styles.botaoNumero}
+          onPress={() => adicionarNumero("8")}
+        >
           <Text style={styles.textoNumeros}>8</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botaoNumero}
-        onPress={() => adicionarNumero("9")}>
+        <TouchableOpacity
+          style={styles.botaoNumero}
+          onPress={() => adicionarNumero("9")}
+        >
           <Text style={styles.textoNumeros}>9</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botaoOperacao}
-        onPress={() => selecionarOperacao("/")}>
+        <TouchableOpacity
+          style={styles.botaoOperacao}
+          onPress={() => selecionarOperacao("/")}
+        >
           <Text style={styles.textoOperacao}>÷</Text>
         </TouchableOpacity>
 
       </View>
 
 
-
+      {/* QUARTA LINHA */}
 
       <View style={styles.colunas}>
 
-        <TouchableOpacity style={styles.botaoNumero}
-        onPress={() => adicionarNumero("4")}>
+        <TouchableOpacity
+          style={styles.botaoNumero}
+          onPress={() => adicionarNumero("4")}
+        >
           <Text style={styles.textoNumeros}>4</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botaoNumero}
-        onPress={() => adicionarNumero("5")}>
+        <TouchableOpacity
+          style={styles.botaoNumero}
+          onPress={() => adicionarNumero("5")}
+        >
           <Text style={styles.textoNumeros}>5</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botaoNumero}
-        onPress={() => adicionarNumero("6")}>
+        <TouchableOpacity
+          style={styles.botaoNumero}
+          onPress={() => adicionarNumero("6")}
+        >
           <Text style={styles.textoNumeros}>6</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botaoOperacao}
-        onPress={() => selecionarOperacao("*")}>
+        <TouchableOpacity
+          style={styles.botaoOperacao}
+          onPress={() => selecionarOperacao("*")}
+        >
           <Text style={styles.textoOperacao}>×</Text>
         </TouchableOpacity>
 
       </View>
 
 
-
+      {/* QUINTA LINHA */}
 
       <View style={styles.colunas}>
 
-        <TouchableOpacity style={styles.botaoNumero}
-        onPress={() => adicionarNumero("1")}>
+        <TouchableOpacity
+          style={styles.botaoNumero}
+          onPress={() => adicionarNumero("1")}
+        >
           <Text style={styles.textoNumeros}>1</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botaoNumero}
-        onPress={() => adicionarNumero("2")}>
+        <TouchableOpacity
+          style={styles.botaoNumero}
+          onPress={() => adicionarNumero("2")}
+        >
           <Text style={styles.textoNumeros}>2</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botaoNumero}
-        onPress={() => adicionarNumero("3")}>
+        <TouchableOpacity
+          style={styles.botaoNumero}
+          onPress={() => adicionarNumero("3")}
+        >
           <Text style={styles.textoNumeros}>3</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botaoOperacao}
-        onPress={() => selecionarOperacao("-")}>
+        <TouchableOpacity
+          style={styles.botaoOperacao}
+          onPress={() => selecionarOperacao("-")}
+        >
           <Text style={styles.textoOperacao}>−</Text>
         </TouchableOpacity>
 
       </View>
 
 
-
+      {/* SEXTA LINHA */}
 
       <View style={styles.colunas}>
 
-        <TouchableOpacity style={styles.botaoNumero}
-        onPress={() => adicionarNumero("0")}>
+        <TouchableOpacity
+          style={styles.botaoNumero}
+          onPress={() => adicionarNumero("0")}
+        >
           <Text style={styles.textoNumeros}>0</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botaoNumero}
-        onPress={adicionaPonto}>
-          <Text style={styles.textoNumeros}>.</Text>
+        <TouchableOpacity
+          style={styles.botaoNumero}
+          onPress={adicionaPonto}
+        >
+          <Text style={styles.textoNumeros}>,</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botaoIgual}
-        onPress={calcularResultado}>
+        <TouchableOpacity
+          style={styles.botaoIgual}
+          onPress={calcularResultado}
+        >
           <Text style={styles.textoOperacao}>=</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.botaoOperacao}
-        onPress={() => selecionarOperacao ("+")}>
+        <TouchableOpacity
+          style={styles.botaoOperacao}
+          onPress={() => selecionarOperacao("+")}
+        >
           <Text style={styles.textoOperacao}>+</Text>
         </TouchableOpacity>
 
       </View>
 
 
-    <View style={styles.rodape}>
-      <Text style={styles.rodapeNome}>Maria Gabriela ♡</Text>
-    </View>
+      {/* RODAPÉ */}
+
+      <View style={styles.rodape}>
+
+        <Text style={styles.rodapeNome}>
+          Maria Gabriela ♡
+        </Text>
+
+      </View>
 
     </View>
   );
@@ -331,6 +857,10 @@ function App() {
 
 export default App;
 
+
+// =========================
+// ESTILIZAÇÃO
+// =========================
 
 const styles = StyleSheet.create({
 
@@ -342,9 +872,6 @@ const styles = StyleSheet.create({
     paddingTop: 40,
   },
 
-
-
-  // Titulo
   titulo: {
     textAlign: "center",
     backgroundColor: "#6D4C7D",
@@ -355,8 +882,6 @@ const styles = StyleSheet.create({
     width: "100%",
   },
 
-
-  // visor operacoes
   painel: {
     width: "92%",
     textAlign: "right",
@@ -370,16 +895,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
 
-
-  // linhas
   colunas: {
     flexDirection: "row",
     justifyContent: "center",
     gap: 10,
   },
 
-
-  // Primeira linha
   botao: {
     backgroundColor: "#E8DCEE",
     borderRadius: 12,
@@ -396,8 +917,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
-
-  // Segunda linha
   botaoEspecial: {
     backgroundColor: "#DCC8E5",
     borderRadius: 18,
@@ -415,8 +934,6 @@ const styles = StyleSheet.create({
     color: "#6D4C7D",
   },
 
-
-  // Todos os numeros
   botaoNumero: {
     backgroundColor: "#FFFFFF",
     borderRadius: 18,
@@ -438,8 +955,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-
-  // botoes operacao
   botaoOperacao: {
     backgroundColor: "#C86B98",
     borderRadius: 18,
@@ -457,8 +972,6 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
 
-
-  // botao de igual
   botaoIgual: {
     backgroundColor: "#8E5A9F",
     borderRadius: 18,
@@ -469,7 +982,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     elevation: 3,
   },
-
 
   rodape: {
     flex: 1,
@@ -483,4 +995,5 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginTop: 2,
   },
+
 });
